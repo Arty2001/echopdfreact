@@ -1,0 +1,14 @@
+/* Header.module.css */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Questrial&display=swap');
+
+.header {
+    text-align: center;
+    font-family: 'Montserrat', sans-serif; /* Use Montserrat font */
+    margin: 10px;
+    font-size: 25px;
+    max-height: 50px;
+}
+  
+.echo {
+font-weight: bold;
+}
