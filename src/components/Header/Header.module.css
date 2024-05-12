@@ -11,4 +11,5 @@
   
 .echo {
 font-weight: bold;
+color:var(--mantine-color-blue-3);
 }
