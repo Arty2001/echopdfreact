@@ -6,7 +6,7 @@
 }
 .wrapper {
     position: relative;
-    margin-bottom: rem(30px);
+    margin-bottom: 30px;
     width: 50vw;
     height: 30vh;
     justify-content: center;
@@ -15,8 +15,8 @@
   }
   
   .dropzone {
-    border-width: rem(1px);
-    padding-bottom: rem(50px);
+    border-width: 1px;
+    padding-bottom: 50px;
     height: 100%;
     width: 100%;
   }
@@ -26,8 +26,9 @@
   }
   
   .control {
-    position: absolute;
-    width: rem(250px);
-    left: calc(50% - rem(125px));
-    bottom: rem(-20px);
+    position: absolute !important;
+    width: 250px !important;
+    left: calc(50% - 125px);
+    bottom: -20px;
+    background-color: var(--mantine-color-blue-4) !important;
   }
