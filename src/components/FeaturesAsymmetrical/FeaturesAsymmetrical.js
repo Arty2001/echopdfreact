@@ -1,6 +1,6 @@
-import { Text, SimpleGrid, Container } from '@mantine/core';
-import { IconTruck, IconCertificate, IconCoin } from '@tabler/icons-react';
-import classes from './FeaturesAsymmetrical.module.css';
+import { Text, SimpleGrid, Container } from "@mantine/core";
+import { IconTruck, IconCertificate, IconCoin } from "@tabler/icons-react";
+import classes from "./FeaturesAsymmetrical.module.css";
 
 function Feature({ icon, title, description, className, ...others }) {
   return (
@@ -8,7 +8,7 @@ function Feature({ icon, title, description, className, ...others }) {
       <div className={classes.overlay} />
 
       <div className={classes.content}>
-        <icon/>
+        <icon />
         <Text fw={700} fz="lg" mb="xs" mt={5} className={classes.title}>
           {title}
         </Text>
@@ -23,21 +23,21 @@ function Feature({ icon, title, description, className, ...others }) {
 const mockdata = [
   {
     icon: IconTruck,
-    title: 'Free Worldwide shipping',
+    title: "Free Worldwide shipping",
     description:
-      'As electricity builds up inside its body, it becomes more aggressive. One theory is that the electricity.',
+      "As electricity builds up inside its body, it becomes more aggressive. One theory is that the electricity.",
   },
   {
     icon: IconCertificate,
-    title: 'Best Quality Product',
+    title: "Best Quality Product",
     description:
-      'Slakoth’s heart beats just once a minute. Whatever happens, it is content to loaf around motionless.',
+      "Slakoth’s heart beats just once a minute. Whatever happens, it is content to loaf around motionless.",
   },
   {
     icon: IconCoin,
-    title: 'Very Affordable Pricing',
+    title: "Very Affordable Pricing",
     description:
-      'Thought to have gone extinct, Relicanth was given a name that is a variation of the name of the person who discovered.',
+      "Thought to have gone extinct, Relicanth was given a name that is a variation of the name of the person who discovered.",
   },
 ];
 
