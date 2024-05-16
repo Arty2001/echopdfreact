@@ -1,66 +1,70 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import * as pdfjs from "pdfjs-dist";
 import "./PDFPage.css";
 
-function PdfPage({ pageNumber, pdf }) {
+function PdfPage({ pageNumber, pdf, pageDim, setPageDim }) {
   const [page, setPage] = useState();
-  const [pageDim, setPageDim] = useState({height:0,width:0});
 
   useEffect(() => {
     const loadPage = async () => {
       const loadedPage = await pdf.getPage(pageNumber);
       setPage(loadedPage);
       const viewport = loadedPage.getViewport({ scale: 1 });
-      setPageDim({height: viewport.height, width: viewport.width});
+      setPageDim({ height: viewport.height, width: viewport.width });
     };
 
     loadPage();
-  }, [pageNumber, pdf]);
+  }, [pageNumber, pdf, setPageDim]);
+
+  const memoizedCanvas = useMemo(() => {
+    if (!page) return null;
+
+    const viewport = page.getViewport({ scale: 1 });
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    canvas.height = viewport.height;
+    canvas.width = viewport.width;
+    page.render({ canvasContext: context, viewport });
+    context.globalCompositeOperation = 'difference';
+
+    return canvas;
+  }, [page]);
+
+  const memoizedTextLayer = useMemo(() => {
+    if (!page) return null;
+
+    const textLayerRef = document.createElement('div');
+    const viewport = page.getViewport({ scale: 1 });
+    page.getTextContent().then((textContent) => {
+      pdfjs.renderTextLayer({
+        textContentSource: textContent,
+        textContent: textContent,
+        container: textLayerRef,
+        viewport: viewport,
+        textDivs: [],
+      });
+    });
+
+    return textLayerRef;
+  }, [page]);
 
   return (
     <div
       className="PdfPage"
-      style={{height: pageDim.height, width: pageDim.width,boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)", // Adding shadow
-      borderRadius: "3px", // Adding border radius for a modern look
-      overflow: "hidden", // Ensure overflow is hidden to contain the shadow
-    }}
-
+      style={{
+        height: pageDim.height,
+        width: pageDim.width,
+        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+        borderRadius: '3px',
+        overflow: 'hidden',
+      }}
     >
-      {page && (
-        <>
-          <canvas
-            ref={(canvas) => {
-              if (!canvas || !page) return;
-
-              const viewport = page.getViewport({ scale: 1 })
-              const context = canvas.getContext("2d");
-              canvas.height = viewport.height;
-              canvas.width = viewport.width;
-              page.render({ canvasContext: context, viewport });
-              context.globalCompositeOperation = 'difference';
-            }}
-          />
-          <div
-            className="PdfPage__textLayer"
-            ref={(textLayerRef) => {
-              if (!textLayerRef || !page) return;
-              const viewport = page.getViewport({ scale: 1 })
-              page.getTextContent().then((textContent) => {
-                // Pass the data to the method for rendering of text over the pdf canvas.
-                pdfjs.renderTextLayer({
-                  textContentSource: textContent,
-                  textContent: textContent,
-                  container: textLayerRef,
-                  viewport: viewport,
-                  textDivs: [],
-                });
-              });
-            }}
-          ></div>
-        </>
+      {memoizedCanvas && <canvas ref={(canvas) => canvas && canvas.replaceWith(memoizedCanvas)} />}
+      {memoizedTextLayer && (
+        <div ref={(textLayerRef) => textLayerRef && textLayerRef.replaceWith(memoizedTextLayer)} />
       )}
     </div>
   );
 }
 
-export default PdfPage;
+export default React.memo(PdfPage);
