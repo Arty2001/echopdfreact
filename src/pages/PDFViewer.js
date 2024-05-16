@@ -8,7 +8,8 @@ import {
   useComputedColorScheme,
   rem,
   Center,
-  extractStyleProps,
+  Slider,
+  Popover,
 } from "@mantine/core";
 import { useWindowScroll ,useMouse} from "@mantine/hooks";
 import classes from "./PDFViewer.module.css";
@@ -29,10 +30,12 @@ export default function PdfViewer({ pdfData }) {
   const computedColorScheme = useComputedColorScheme("light", {
     getInitialValueInEffect: true,
   });
-  const [scroll, scrollTo] = useWindowScroll();
+  const [scroll] = useWindowScroll();
   const [pageNumber, setPageNumber] = React.useState(1);
   const [pageDim, setPageDim] = React.useState({ height: 0, width: 0 });
   const [isVisible, setIsVisible] = React.useState(true);
+  const [zoomOpened, setZoomOpened] = React.useState(false);
+  const [scaleFactor, setScaleFactor] = React.useState(50);
   const { y } = useMouse();
 
 
@@ -45,6 +48,7 @@ export default function PdfViewer({ pdfData }) {
     setPageNumber(pageNum);
     if (scroll.y > 0 && isVisible){
       setIsVisible(false);
+      setZoomOpened(false);
     } else if ( scroll.y < 35 & !isVisible){
       setIsVisible(true);
     }
@@ -156,13 +160,28 @@ export default function PdfViewer({ pdfData }) {
                 >
                   Page {pageNumber} of {pdfData.numPages}
                 </div>
-                <ActionIcon
-                  classNames={{ root: classes.root }}
-                  size={"2rem"}
-                  variant="default"
-                >
-                  <IconZoomIn size={14} />
-                </ActionIcon>
+                <Popover opened={zoomOpened} onChange={setZoomOpened}>
+                  <Popover.Target>
+                    <ActionIcon
+                      classNames={{ root: classes.root }}
+                      size={"2rem"}
+                      variant="default"
+                      onClick={() => setZoomOpened((o) => !o)}
+                    >
+                      <IconZoomIn size={14} />
+                    </ActionIcon>
+                  </Popover.Target>
+                  <Popover.Dropdown>
+                    <div style={{width:100}}>
+                      <Slider
+                        size="xs"
+                        color="blue"
+                        value={scaleFactor}
+                        onChange={setScaleFactor}
+                      />
+                    </div>
+                  </Popover.Dropdown>
+                </Popover>
                 <ActionIcon
                   classNames={{ root: classes.root }}
                   size={"2rem"}
@@ -191,7 +210,7 @@ export default function PdfViewer({ pdfData }) {
           </motion.div>
         <div
           style={{
-            "--scale-factor": 1,
+            "--scale-factor": 1 * (scaleFactor/50),
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
