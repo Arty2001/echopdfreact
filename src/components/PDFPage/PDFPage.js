@@ -34,6 +34,7 @@ function PdfPage({ pageNumber, pdf, pageDim, setPageDim }) {
     if (!page) return null;
 
     const textLayerRef = document.createElement('div');
+    textLayerRef.className = "PdfPage__textLayer"
     const viewport = page.getViewport({ scale: 1 });
     page.getTextContent().then((textContent) => {
       pdfjs.renderTextLayer({

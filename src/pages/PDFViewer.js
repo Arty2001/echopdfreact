@@ -52,7 +52,7 @@ export default function PdfViewer({ pdfData }) {
     } else if ( scroll.y < 35 & !isVisible){
       setIsVisible(true);
     }
-  }, [scroll]);
+  }, [scroll,isVisible, pageDim]);
 
   useEffect(() => {
     if(y < 40){
