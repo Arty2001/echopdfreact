@@ -1,5 +1,6 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import PdfPage from "../components/PDFPage/PDFPage";
+import { CursorTracker } from "../components/CursorTracker/CursorTracker";
 import {
   Stack,
   Menu,
@@ -36,6 +37,7 @@ export default function PdfViewer({ pdfData }) {
   const [isVisible, setIsVisible] = React.useState(true);
   const [zoomOpened, setZoomOpened] = React.useState(false);
   const [scaleFactor, setScaleFactor] = React.useState(50);
+  const [isCursorTracking, setIsCursorTracking] = React.useState(false);
   const { y } = useMouse();
 
 
@@ -64,6 +66,7 @@ export default function PdfViewer({ pdfData }) {
 
   return (
       <Stack >
+        <CursorTracker isCursorTracking={isCursorTracking}/>
         <div style={{ width: "100%", height: 35 }}></div>
           <motion.div
             style={{
@@ -126,8 +129,16 @@ export default function PdfViewer({ pdfData }) {
                         <IconPointer
                           style={{ width: 14, height: 14 }}
                           stroke={1.5}
+                          color={isCursorTracking ? "red" : "black"}
                         />
                       }
+                      onClick={() => {
+                        if (isCursorTracking){
+                          setIsCursorTracking(false);
+                        } else{
+                          setIsCursorTracking(true);
+                        }
+                      }}
                     >
                       Cursor Tracking
                     </Menu.Item>
