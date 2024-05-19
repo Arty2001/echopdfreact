@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import PdfPage from "../components/PDFPage/PDFPage";
 import { CursorTracker } from "../components/CursorTracker/CursorTracker";
 import {

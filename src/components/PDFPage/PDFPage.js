@@ -20,12 +20,12 @@ function PdfPage({ pageNumber, pdf, pageDim, setPageDim }) {
     if (!page) return null;
 
     const viewport = page.getViewport({ scale: 1 });
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
     canvas.height = viewport.height;
     canvas.width = viewport.width;
     page.render({ canvasContext: context, viewport });
-    context.globalCompositeOperation = 'difference';
+    context.globalCompositeOperation = "difference";
 
     return canvas;
   }, [page]);
@@ -33,16 +33,48 @@ function PdfPage({ pageNumber, pdf, pageDim, setPageDim }) {
   const memoizedTextLayer = useMemo(() => {
     if (!page) return null;
 
-    const textLayerRef = document.createElement('div');
-    textLayerRef.className = "PdfPage__textLayer"
+    const textLayerRef = document.createElement("div");
+    textLayerRef.className = "PdfPage__textLayer";
     const viewport = page.getViewport({ scale: 1 });
-    page.getTextContent().then((textContent) => {
-      pdfjs.renderTextLayer({
+    page.getTextContent().then(async (textContent) => {
+      await pdfjs.renderTextLayer({
         textContentSource: textContent,
         textContent: textContent,
         container: textLayerRef,
         viewport: viewport,
         textDivs: [],
+      });
+
+      const textElements = textLayerRef.querySelectorAll(
+        'span[role="presentation"]'
+      );
+
+      console.log(textElements);
+
+      textElements.forEach((textElement) => {
+        // Get the text content of the current text element
+        const textContent = textElement.innerHTML;
+
+        // Split the text content into words and whitespaces
+        const wordsAndWhitespaces = textContent.split(/(\s+)/);
+
+        // Create an array to hold the newly created span elements
+        const wrappedContent = wordsAndWhitespaces.map((item) => {
+          // Create a new span element for each word
+          const span = document.createElement("span");
+
+          // Set the text content of the span element to the current item
+          span.textContent = item;
+
+          // Return the newly created span element
+          return span.outerHTML;
+        });
+
+        // Join the wrapped content array into a single string
+        const wrappedText = wrappedContent.join("");
+
+        // Replace the content of the current text element with the wrapped text
+        textElement.innerHTML = wrappedText;
       });
     });
 
@@ -55,14 +87,22 @@ function PdfPage({ pageNumber, pdf, pageDim, setPageDim }) {
       style={{
         height: pageDim.height,
         width: pageDim.width,
-        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-        borderRadius: '3px',
-        overflow: 'hidden',
+        boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+        borderRadius: "3px",
+        overflow: "hidden",
       }}
     >
-      {memoizedCanvas && <canvas ref={(canvas) => canvas && canvas.replaceWith(memoizedCanvas)} />}
+      {memoizedCanvas && (
+        <canvas
+          ref={(canvas) => canvas && canvas.replaceWith(memoizedCanvas)}
+        />
+      )}
       {memoizedTextLayer && (
-        <div ref={(textLayerRef) => textLayerRef && textLayerRef.replaceWith(memoizedTextLayer)} />
+        <div
+          ref={(textLayerRef) =>
+            textLayerRef && textLayerRef.replaceWith(memoizedTextLayer)
+          }
+        />
       )}
     </div>
   );
