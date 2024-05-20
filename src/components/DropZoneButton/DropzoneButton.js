@@ -3,12 +3,10 @@ import { Text, Group, Button, useMantineTheme } from "@mantine/core";
 import { Dropzone, MIME_TYPES } from "@mantine/dropzone";
 import { IconCloudUpload, IconX, IconDownload } from "@tabler/icons-react";
 import classes from "./DropZoneButton.module.css";
-import { useMediaQuery } from "@mantine/hooks";
 
 export function DropzoneButton({ pdfToHtml }) {
   const theme = useMantineTheme();
   const openRef = useRef(null);
-  const matches = useMediaQuery('(min-width: 56.25em)');
 
   return (
     <div className={classes.center}>

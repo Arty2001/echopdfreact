@@ -1,5 +1,5 @@
 import { Text, SimpleGrid, Container } from "@mantine/core";
-import { IconTruck, IconCertificate, IconCoin, IconShield, IconBrowser, IconNavigationCode } from "@tabler/icons-react";
+import { IconTruck, IconCertificate, IconCoin, IconShieldLock, IconLayoutGrid, IconNavigationCode } from "@tabler/icons-react";
 import classes from "./FeaturesAsymmetrical.module.css";
 
 function Feature({ icon, title, description, className, ...others }) {
@@ -9,8 +9,8 @@ function Feature({ icon, title, description, className, ...others }) {
 
       <div className={classes.content}>
         {title === "Seamless PDF Interaction" && <IconNavigationCode/>}
-        {title === "Secure and Private" && <IconShield/>}
-        {title === "Modern and Minimalistic Design" && <IconBrowser/>}
+        {title === "Secure and Private" && <IconShieldLock/>}
+        {title === "Modern and Minimalistic Design" && <IconLayoutGrid/>}
         <Text fw={700} fz="lg" mb="xs" mt={5} className={classes.title}>
           {title}
         </Text>
@@ -37,7 +37,7 @@ const features = [
   },
   {
     icon: IconCoin,
-    title: "Modern and Minimalist Design",
+    title: "Modern and Minimalistic Design",
     description:
       "Experience a distraction-free reading environment with our simplistic, modern UI. EchoPDF provides a clean interface with no ads or overlays, allowing you to focus solely on your content. We prioritize a seamless reading experience to enhance your productivity and enjoyment.",
   },
