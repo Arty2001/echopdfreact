@@ -17,30 +17,6 @@ export function CursorTracker({ isCursorTracking }) {
 			///complicated stuff
 		}
 	},[x,y,isCursorTracking])
-// 	const handleClick = async (event) => {
-
-// 		const selectedSpan = document.elementFromPoint(x,y);
-// 		var selectedText = null;
-// 		console.log(selectedSpan.innerText);
-// 		if (selectedSpan.innerText){
-// 		 selectedText = selectedSpan.innerText;
-// 	 } 
-		
-
-// 	 if (selectedText) {
-// 		 console.log("Selected Text: ", selectedText);
-// 		 readTextAloud(selectedText);
-// 	 }
-// 	 // } else {
-// 	 //   console.log("No text found at this location");
-// 	 // }
-//  };
-
-//  const readTextAloud = (text) => {
-// 	 const utterance = new SpeechSynthesisUtterance(text);
-// 	 window.speechSynthesis.cancel(); // Cancel any ongoing speech
-// 	 window.speechSynthesis.speak(utterance);
-//  };
 
 
   return (

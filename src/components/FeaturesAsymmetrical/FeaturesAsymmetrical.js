@@ -1,5 +1,5 @@
 import { Text, SimpleGrid, Container } from "@mantine/core";
-import { IconTruck, IconCertificate, IconCoin } from "@tabler/icons-react";
+import { IconTruck, IconCertificate, IconCoin, IconShield, IconBrowser, IconNavigationCode } from "@tabler/icons-react";
 import classes from "./FeaturesAsymmetrical.module.css";
 
 function Feature({ icon, title, description, className, ...others }) {
@@ -8,7 +8,9 @@ function Feature({ icon, title, description, className, ...others }) {
       <div className={classes.overlay} />
 
       <div className={classes.content}>
-        <icon />
+        {title === "Seamless PDF Interaction" && <IconNavigationCode/>}
+        {title === "Secure and Private" && <IconShield/>}
+        {title === "Modern and Minimalistic Design" && <IconBrowser/>}
         <Text fw={700} fz="lg" mb="xs" mt={5} className={classes.title}>
           {title}
         </Text>
@@ -20,29 +22,29 @@ function Feature({ icon, title, description, className, ...others }) {
   );
 }
 
-const mockdata = [
+const features = [
   {
     icon: IconTruck,
-    title: "Free Worldwide shipping",
+    title: "Seamless PDF Interaction",
     description:
-      "As electricity builds up inside its body, it becomes more aggressive. One theory is that the electricity.",
+      "Effortlessly navigate through PDFs using your eyes or cursor. With EchoPDF, you can customize your reading path for an intuitive and personalized experience. Gain full control over how you engage with your documents, making reading more enjoyable and efficient.",
   },
   {
     icon: IconCertificate,
-    title: "Best Quality Product",
+    title: "Secure and Private",
     description:
-      "Slakoth’s heart beats just once a minute. Whatever happens, it is content to loaf around motionless.",
+      "Your privacy is our utmost priority. EchoPDF ensures that your files are never stored on any server or backend system. Enjoy complete peace of mind knowing that your reading habits and documents are kept confidential and secure at all times.",
   },
   {
     icon: IconCoin,
-    title: "Very Affordable Pricing",
+    title: "Modern and Minimalist Design",
     description:
-      "Thought to have gone extinct, Relicanth was given a name that is a variation of the name of the person who discovered.",
+      "Experience a distraction-free reading environment with our simplistic, modern UI. EchoPDF provides a clean interface with no ads or overlays, allowing you to focus solely on your content. We prioritize a seamless reading experience to enhance your productivity and enjoyment.",
   },
 ];
 
 export function FeaturesAsymmetrical() {
-  const items = mockdata.map((item) => <Feature {...item} key={item.title} />);
+  const items = features.map((item) => <Feature {...item} key={item.title} />);
 
   return (
     <Container mt={30} mb={30} size="lg">

@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useMemo } from "react";
+import {useMouse} from "@mantine/hooks";
 import * as pdfjs from "pdfjs-dist";
 import "./PDFPage.css";
 
 function PdfPage({ pageNumber, pdf, pageDim, setPageDim }) {
   const [page, setPage] = useState();
+  const {x,y} = useMouse();
 
   useEffect(() => {
     const loadPage = async () => {
@@ -15,6 +17,31 @@ function PdfPage({ pageNumber, pdf, pageDim, setPageDim }) {
 
     loadPage();
   }, [pageNumber, pdf, setPageDim]);
+
+  	const handleClick = async (event) => {
+
+		const selectedSpan = document.elementFromPoint(x,y);
+		var selectedText = null;
+		console.log(selectedSpan.innerText);
+		if (selectedSpan.innerText){
+		 selectedText = selectedSpan.innerText;
+	 } 
+		
+
+	 if (selectedText) {
+		 console.log("Selected Text: ", selectedText);
+		 readTextAloud(selectedText);
+	 }
+	 // } else {
+	 //   console.log("No text found at this location");
+	 // }
+ };
+
+ const readTextAloud = (text) => {
+	 const utterance = new SpeechSynthesisUtterance(text);
+	 window.speechSynthesis.cancel(); // Cancel any ongoing speech
+	 window.speechSynthesis.speak(utterance);
+ };
 
   const memoizedCanvas = useMemo(() => {
     if (!page) return null;
@@ -48,8 +75,6 @@ function PdfPage({ pageNumber, pdf, pageDim, setPageDim }) {
       const textElements = textLayerRef.querySelectorAll(
         'span[role="presentation"]'
       );
-
-      console.log(textElements);
 
       textElements.forEach((textElement) => {
         // Get the text content of the current text element
@@ -91,6 +116,7 @@ function PdfPage({ pageNumber, pdf, pageDim, setPageDim }) {
         borderRadius: "3px",
         overflow: "hidden",
       }}
+      onClick={(e)=>{handleClick(e)}}
     >
       {memoizedCanvas && (
         <canvas

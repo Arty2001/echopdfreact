@@ -1,0 +1,29 @@
+@keyframes pulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.recording-icon {
+  width: 14px; /* Adjust as needed */
+  height: 14px; /* Adjust as needed */
+}
+
+.outer-circle {
+    fill: #61dafb;
+  animation: pulse 2s infinite;
+  transform-origin: center;
+}
+
+.inner-circle {
+  fill: #61dafb;
+}
