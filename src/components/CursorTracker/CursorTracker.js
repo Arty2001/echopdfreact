@@ -1,5 +1,6 @@
 import React from "react";
 import { useMouse } from "@mantine/hooks";
+import "./CursorTracker.css";
 
 //1. timeout for every mouse movement to only capture and
 // get the text content when someone actually stops and hovers around the same spot for 1* second
@@ -30,10 +31,14 @@ export function CursorTracker({ isCursorTracking }) {
 					} 
 
 					if (selectedText && selectedSpan !== lastSelectedSpan) {
+						if (lastSelectedSpan){
+							lastSelectedSpan.classList.remove("selected")
+						}
+						selectedSpan.classList.add("selected")
 						setTextQueue((prevQueue) => [...prevQueue, selectedText]);
                 		setLastSelectedSpan(selectedSpan);
 					}
-				}, 100); // Adjust the timeout as needed
+				}, 50); // Adjust the timeout as needed
 			};
 
 			handleMouseMove();

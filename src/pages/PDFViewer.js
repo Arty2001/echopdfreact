@@ -11,6 +11,8 @@ import {
   Center,
   Slider,
   Popover,
+  Group,
+  ColorSwatch
 } from "@mantine/core";
 import { useWindowScroll, useMouse } from "@mantine/hooks";
 import classes from "./PDFViewer.module.css";
@@ -39,6 +41,7 @@ export default function PdfViewer({ pdfData }) {
   const [zoomOpened, setZoomOpened] = React.useState(false);
   const [scaleFactor, setScaleFactor] = React.useState(50);
   const [isCursorTracking, setIsCursorTracking] = React.useState(false);
+  const [highlightColor, setHighlightColor]= React.useState("#FFFF9F")
   const { y } = useMouse();
 
   useEffect(() => {
@@ -56,6 +59,8 @@ export default function PdfViewer({ pdfData }) {
     }
   }, [scroll, isVisible, pageDim]);
 
+
+
   useEffect(() => {
     if (y < 40) {
       setIsVisible(true);
@@ -63,7 +68,7 @@ export default function PdfViewer({ pdfData }) {
   }, [y]);
 
   return (
-    <Stack>
+    <Stack style={{'--highlight-color': highlightColor}} >
       <CursorTracker isCursorTracking={isCursorTracking} />
       <div style={{ width: "100%", height: 35 }}></div>
       <motion.div
@@ -210,13 +215,25 @@ export default function PdfViewer({ pdfData }) {
                 </div>
               </Popover.Dropdown>
             </Popover>
-            <ActionIcon
-              classNames={{ root: classes.root }}
-              size={"2rem"}
-              variant="default"
-            >
-              <IconHighlight size={14} />
-            </ActionIcon>
+            <Popover>
+              <Popover.Target>
+                <ActionIcon
+                classNames={{ root: classes.root }}
+                size={"2rem"}
+                variant="default"
+
+              >
+                <IconHighlight size={14} />
+              </ActionIcon>
+              </Popover.Target>
+              <Popover.Dropdown>
+              <Group>
+                <ColorSwatch color="#FFFF9F" onClick={()=>{setHighlightColor("#FFFF9F")}} withShadow={highlightColor==="#FFFF9F"}/>
+                <ColorSwatch color="#82EEFD" onClick={()=>{setHighlightColor("#82EEFD")}} withShadow={highlightColor==="#82EEFD"}/>
+                <ColorSwatch color="#98FF98" onClick={()=>{setHighlightColor("#98FF98")}} withShadow={highlightColor==="#98FF98"}/>
+              </Group>
+              </Popover.Dropdown>
+            </Popover>
             <ActionIcon
               classNames={{ root: classes.root }}
               size={"2rem"}
