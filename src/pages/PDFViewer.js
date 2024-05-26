@@ -41,7 +41,8 @@ export default function PdfViewer({ pdfData }) {
   const [zoomOpened, setZoomOpened] = React.useState(false);
   const [scaleFactor, setScaleFactor] = React.useState(50);
   const [isCursorTracking, setIsCursorTracking] = React.useState(false);
-  const [highlightColor, setHighlightColor]= React.useState("#FFFF9F")
+  const [highlightColor, setHighlightColor]= React.useState("#FFB6C1")
+  const [highlightColorParent, setHighlightColorParent]= React.useState("#FFD6DA")
   const { y } = useMouse();
 
   useEffect(() => {
@@ -68,7 +69,7 @@ export default function PdfViewer({ pdfData }) {
   }, [y]);
 
   return (
-    <Stack style={{'--highlight-color': highlightColor}} >
+    <Stack style={{'--highlight-color': highlightColor, '--highlight-color-parent': highlightColorParent}} >
       <CursorTracker isCursorTracking={isCursorTracking} />
       <div style={{ width: "100%", height: 35 }}></div>
       <motion.div
@@ -228,10 +229,31 @@ export default function PdfViewer({ pdfData }) {
               </Popover.Target>
               <Popover.Dropdown>
               <Group>
-                <ColorSwatch color="#FFFF9F" onClick={()=>{setHighlightColor("#FFFF9F")}} withShadow={highlightColor==="#FFFF9F"}/>
-                <ColorSwatch color="#82EEFD" onClick={()=>{setHighlightColor("#82EEFD")}} withShadow={highlightColor==="#82EEFD"}/>
-                <ColorSwatch color="#98FF98" onClick={()=>{setHighlightColor("#98FF98")}} withShadow={highlightColor==="#98FF98"}/>
-              </Group>
+                <ColorSwatch
+                    color="#FFB6C1"
+                    onClick={() => {
+                        setHighlightColor("#FFB6C1");
+                        setHighlightColorParent("#FFD6DA");
+                    }}
+                    withShadow={highlightColor === "#FFB6C1"}
+                />
+                <ColorSwatch
+                    color="#87CEFA"
+                    onClick={() => {
+                        setHighlightColor("#87CEFA");
+                        setHighlightColorParent("#B0E2FF");
+                    }}
+                    withShadow={highlightColor === "#87CEFA"}
+                />
+                <ColorSwatch
+                    color="#98FB98"
+                    onClick={() => {
+                        setHighlightColor("#98FB98");
+                        setHighlightColorParent("#C1FFC1");
+                    }}
+                    withShadow={highlightColor === "#98FB98"}
+                />
+            </Group>
               </Popover.Dropdown>
             </Popover>
             <ActionIcon

@@ -1,3 +1,8 @@
 .selected {
-    background-color: var(--highlight-color); /* Change the background color as desired */
+    background-color: black;
+    /* background-color: var(--highlight-color); Change the background color as desired */
+}
+
+.selected-parent {
+    background-color: var(--highlight-color-parent);
 }

@@ -9,7 +9,7 @@ export function CursorTracker({ isCursorTracking }) {
   const [textQueue, setTextQueue] = useState([]);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [lastSelectedSpan, setLastSelectedSpan] = useState(null);
-  const [readingSpeed, setReadingSpeed] = useState(1.3); 
+  const [readingSpeed, setReadingSpeed] = useState(1.2); 
 
   useEffect(() => {
     if (isCursorTracking) {
@@ -100,6 +100,28 @@ export function CursorTracker({ isCursorTracking }) {
     function readNextText() {
       if (textQueue.length > 0 && !isSpeaking) {
         const utterance = new SpeechSynthesisUtterance(textQueue[0].text);
+        utterance.addEventListener('boundary', (event) => {
+    if (event.name === 'word') {
+        // The current word being spoken
+        const selectedElement = document.querySelector('.selected');
+        const currentWord = utterance.text.substring(event.charIndex, event.charIndex + event.charLength);
+        if (selectedElement) {
+          const parentChildren = Array.from(selectedElement.parentElement.children);
+          let index = parentChildren.findIndex(child => child === selectedElement);
+          selectedElement.classList.remove("selected");
+          while(index + 1 < parentChildren.length ){
+            if(parentChildren[index+1].innerText.trim().length !== 0 && parentChildren[index+1].innerText.trim() === currentWord){
+              break
+            } 
+            index+=1;
+          }
+          if( index + 1 < parentChildren.length){
+            parentChildren[index+1].classList.add("selected");
+          }
+        }
+        console.log({currentWord});
+    }
+});
         utterance.rate = readingSpeed; 
         utterance.onend = () => {
           // After speaking ends, remove the spoken text from the queue
@@ -116,6 +138,7 @@ export function CursorTracker({ isCursorTracking }) {
         };
         setIsSpeaking(true);
         window.speechSynthesis.speak(utterance);
+        
       } else if (!isSpeaking && lastSelectedSpan && isCursorTracking) {
         const spanPresentationElements = Array.from(
           lastSelectedSpan.parentElement.parentElement.querySelectorAll('span[role="presentation"]')
