@@ -2,9 +2,23 @@
 
 **An accessible PDF reader that wraps every single word in its own element — so it can read aloud, highlight, and track your focus word by word.**
 
-Reading a dense PDF with a wandering brain is a fight. Echo renders PDFs in the browser and layers focus aids on top: read-aloud with karaoke-style highlighting, a cursor-tracking mode, and an experimental eye-tracking mode.
+Reading a dense PDF with a wandering brain is a fight. Echo renders PDFs in the browser and layers focus aids on top: read-aloud with word-level highlighting, a cursor-tracking mode, and an experimental eye-tracking mode.
 
 Accessibility features usually get bolted on last. Echo is what happens when they are the whole product.
+
+![The Echo reader with a two-page PDF open. A floating toolbar across the top carries the Read Aloud menu, a live "Page 1 of 2" indicator, and controls for zoom, highlight colour, and dark mode. The document is rendered below it on a white page.](docs/screenshot.png)
+
+*The reader with [`docs/sample-document.pdf`](docs/sample-document.pdf) loaded.*
+
+![Close-up of the toolbar in Cursor Tracking mode, showing a live recording dot beside the label. In the paragraph below, the word "move" is highlighted in pink and the line containing it carries a fainter tint, so the active word stands out from the line being read.](docs/cursor-tracking.png)
+
+*Cursor Tracking active. The word under the cursor gets the highlight colour; the line it belongs to gets a softer tint of the same colour, so the active word stays distinguishable.*
+
+![Animation of the same highlighted word cycling through the toolbar's three highlight colours — pink, blue, then green — while the surrounding line follows in a lighter tint of each.](docs/highlight-colours.gif)
+
+*The toolbar's colour swatches applied to the active word.*
+
+<sub>Screenshots are of the app running locally against the sample PDF. This machine exposes no `speechSynthesis` voices to automated browsers, so the cursor-tracking capture supplied the utterance events an OS voice would normally emit; the highlighting itself is the app's own code.</sub>
 
 ---
 
@@ -91,7 +105,7 @@ focus aids layered over the word spans
 
 ## Features
 
-- **Read aloud with karaoke highlighting.** Sentences are queued and spoken via the Web Speech API. Echo listens for the utterance's `boundary` event and advances the `.selected` class to the matching word span as the voice reaches it, so the highlight tracks the audio rather than being timed against it.
+- **Read aloud with sentence highlighting.** Sentences are queued and spoken via the Web Speech API, and the word span being read is marked with `.selected` while the line around it takes a softer tint of the same colour. Echo also listens for the utterance's `boundary` event, the intent being to advance the highlight word by word in step with the voice — that advance does not currently work; see [Known rough edges](#known-rough-edges).
 - **Cursor tracking.** Point at a word and Echo starts reading from there. It hit-tests with `document.elementFromPoint`, builds a queue of sentences from that word to the end of the run, and — when the queue drains — picks the geometrically next run (nearest on the same line, else nearest line below) and keeps going. Stop moving the cursor and speech cancels after a short grace period.
 - **Eye tracking — experimental.** See the note below.
 - **Floating toolbar.** Zoom slider, live "page N of M" derived from scroll position, highlight colour swatches, and a light/dark reading mode toggle. The toolbar fades out as you scroll into the document and returns when the cursor nears the top of the window.
@@ -115,7 +129,7 @@ npm install
 npm start
 ```
 
-Open <http://localhost:3000>, drop a PDF onto the upload zone, then open the **Read Aloud** menu in the floating toolbar and choose **Cursor Tracking**. Move your cursor over any word to start reading from it.
+Open <http://localhost:3000> and drop a PDF onto the upload zone — [`docs/sample-document.pdf`](docs/sample-document.pdf) is included if you want one to hand. Then open the **Read Aloud** menu in the floating toolbar and choose **Cursor Tracking**, and move your cursor over any word to start reading from it. Keep the cursor moving: reading stops shortly after it goes still.
 
 Production build:
 
@@ -142,12 +156,18 @@ React 18 · pdf.js (`pdfjs-dist`) · Web Speech API · Mantine · Framer Motion 
 
 ## Known rough edges
 
-This is a working prototype, kept honest rather than polished:
+This is a working prototype, kept honest rather than polished. The list below was checked against the app actually running, not read off the source:
 
+- **The karaoke highlight does not advance word by word.** The `boundary` handler locates the current word with `document.querySelector('.selected')` — but the tracker applies `.selected` to the active word *and* to its parent text run, and the run precedes its children in document order. So the query returns the run, and the handler walks sibling *runs* instead of sibling *words*. The highlight lands on a word and stays there for the rest of the sentence. This is the headline feature and it is the next thing to fix.
+- **The highlight starts on the wrong word.** When a sentence is queued, its `spanElement` is the element the sentence *ended* on, so the highlight appears on the last word of the sentence rather than the first.
+- **Speech cancels when the cursor stops.** Cursor tracking arms a cancel timer roughly 350ms after the last mouse movement, so reading only continues while the cursor keeps moving. Stop the cursor to keep reading and the speech stops instead.
+- **The reading-speed slider is unstyled and unplaced.** `CursorTracker` renders it as a bare `<label>` at the top-left of the document rather than inside the floating toolbar — visible in the screenshot above.
 - Zoom is applied through a `--scale-factor` CSS variable; the canvas itself is rendered at scale 1, so heavy zoom softens the page.
 - Page dimensions are shared across all pages, which assumes a uniform page size within a document.
-- The active-word highlight colour is hard-coded in `CursorTracker.css` rather than reading the `--highlight-color` variable the toolbar sets.
 - Sentence splitting is punctuation-based (`.`, `!`, `?`) and will split on abbreviations.
+- `.selected-parent` in `CursorTracker.css` is never applied by any code path; the line tint is carried by the run's own `.selected` rule.
+
+Recently fixed: the active-word highlight ignored the toolbar's colour swatches because `.selected` hard-coded `background-color: black`. It now reads `--highlight-color`, with the surrounding run taking the softer `--highlight-color-parent` tint.
 
 ## Credits
 
