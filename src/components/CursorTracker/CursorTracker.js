@@ -2,14 +2,87 @@ import React, { useState, useEffect, useRef } from "react";
 import { useMouse } from "@mantine/hooks";
 import "./CursorTracker.css";
 
+// The highlight is carried by two elements at once: the active `.word` span and
+// the `span[role="presentation"]` run it lives in (CursorTracker.css gives the
+// run the softer `--highlight-color-parent` tint). Both are driven from a single
+// reference to the active word so the two can never drift apart.
+function clearHighlight(activeWordRef) {
+  const active = activeWordRef.current;
+  if (active) {
+    active.classList.remove("selected");
+    if (active.parentElement) {
+      active.parentElement.classList.remove("selected");
+    }
+  }
+  activeWordRef.current = null;
+}
+
+function highlightWord(activeWordRef, wordSpan) {
+  if (!wordSpan || wordSpan === activeWordRef.current) return;
+  clearHighlight(activeWordRef);
+  wordSpan.classList.add("selected");
+  if (wordSpan.parentElement) {
+    wordSpan.parentElement.classList.add("selected");
+  }
+  activeWordRef.current = wordSpan;
+}
+
+// Groups a run of `.word` spans into sentence chunks. Each chunk keeps the spans
+// it was built from, in order, together with the character offset at which each
+// span's text starts inside the chunk's `text`. Because the text is assembled
+// here rather than read back off the DOM, those offsets are exact — which is
+// what makes a `boundary` event's charIndex resolvable to a specific span.
+function buildSentenceQueue(wordSpans) {
+  const queue = [];
+  let words = [];
+  let text = "";
+
+  const flush = () => {
+    if (!words.length) return;
+    queue.push({ text, words });
+    words = [];
+    text = "";
+  };
+
+  for (const span of wordSpans) {
+    // The text-layer rebuild also emits whitespace-only `.word` spans to keep
+    // spacing; they are not speakable and must not consume a boundary event.
+    const word = span.textContent.trim();
+    if (!word) continue;
+
+    const start = text.length ? text.length + 1 : 0;
+    text = text.length ? `${text} ${word}` : word;
+    words.push({ span, start });
+
+    if (/[.!?]$/.test(word)) flush();
+  }
+
+  flush();
+  return queue;
+}
+
+// Resolve a boundary event's charIndex to the chunk word that contains it: the
+// last word that starts at or before the index. Mapping by offset rather than
+// by counting boundary events keeps the highlight correct even when a voice
+// skips a token, fires on punctuation, or repeats an index.
+function wordAtCharIndex(chunk, charIndex) {
+  let match = null;
+  for (const word of chunk.words) {
+    if (word.start > charIndex) break;
+    match = word;
+  }
+  return match;
+}
+
 export function CursorTracker({ isCursorTracking }) {
   const { x, y } = useMouse();
   const timeoutRef = useRef(null);
   const cancelTimeoutRef = useRef(null);
+  const activeWordRef = useRef(null);
   const [textQueue, setTextQueue] = useState([]);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [lastSelectedSpan, setLastSelectedSpan] = useState(null);
-  const [readingSpeed, setReadingSpeed] = useState(1.2); 
+  const [readingSpeed, setReadingSpeed] = useState(1.2);
 
   useEffect(() => {
     if (isCursorTracking) {
@@ -22,10 +95,7 @@ export function CursorTracker({ isCursorTracking }) {
           cancelTimeoutRef.current = setTimeout(() => {
             window.speechSynthesis.cancel(); // Stop the current speech
             setIsSpeaking(false); // Allow new text to be read
-            if (lastSelectedSpan) {
-              lastSelectedSpan.parentElement.classList.remove("selected");
-              lastSelectedSpan.classList.remove("selected");
-            }
+            clearHighlight(activeWordRef);
           }, 300); // cursor wait delay
 
           const selectedSpan = document.elementFromPoint(x, y);
@@ -39,44 +109,15 @@ export function CursorTracker({ isCursorTracking }) {
             selectedText &&
             selectedSpan !== lastSelectedSpan
           ) {
-            // Remove the highlight from the last selected span
-            if (lastSelectedSpan) {
-              lastSelectedSpan.parentElement.classList.remove("selected");
-              lastSelectedSpan.classList.remove("selected");
-            }
-
             const parentElement = selectedSpan.parentElement;
             if (parentElement) {
-              const childElements = parentElement.children;
-              const updatedTextQueue = [];
-              let found = false;
-              let sentence = "";
+              const siblings = Array.from(parentElement.children);
+              const startIndex = siblings.indexOf(selectedSpan);
+              const updatedTextQueue = buildSentenceQueue(
+                siblings.slice(startIndex)
+              );
 
-              for (let i = 0; i < childElements.length; i++) {
-                const childElement = childElements[i];
-                if (childElement.innerText === selectedText) {
-                  found = true;
-                }
-                if (found) {
-                  sentence += childElement.innerText + " ";
-                  if (sentence.trim().endsWith(".") || sentence.trim().endsWith("!") || sentence.trim().endsWith("?")) {
-                    updatedTextQueue.push({
-                      text: sentence.trim(),
-                      spanElement: childElement,
-                    });
-                    sentence = "";
-                  }
-                }
-              }
-
-              // Add any remaining text as the last chunk
-              if (sentence.trim().length > 0) {
-                updatedTextQueue.push({
-                  text: sentence.trim(),
-                  spanElement: selectedSpan,
-                });
-              }
-
+              clearHighlight(activeWordRef);
               setTextQueue(updatedTextQueue);
               setLastSelectedSpan(selectedSpan);
             }
@@ -86,6 +127,8 @@ export function CursorTracker({ isCursorTracking }) {
 
       handleMouseMove();
     }
+
+    return () => clearTimeout(timeoutRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [x, y, isCursorTracking]);
 
@@ -99,45 +142,31 @@ export function CursorTracker({ isCursorTracking }) {
 
     function readNextText() {
       if (textQueue.length > 0 && !isSpeaking) {
-        const utterance = new SpeechSynthesisUtterance(textQueue[0].text);
-        utterance.addEventListener('boundary', (event) => {
-    if (event.name === 'word') {
-        // The current word being spoken
-        const selectedElement = document.querySelector('.selected');
-        const currentWord = utterance.text.substring(event.charIndex, event.charIndex + event.charLength);
-        if (selectedElement) {
-          const parentChildren = Array.from(selectedElement.parentElement.children);
-          let index = parentChildren.findIndex(child => child === selectedElement);
-          selectedElement.classList.remove("selected");
-          while(index + 1 < parentChildren.length ){
-            if(parentChildren[index+1].innerText.trim().length !== 0 && parentChildren[index+1].innerText.trim() === currentWord){
-              break
-            } 
-            index+=1;
+        const chunk = textQueue[0];
+        const utterance = new SpeechSynthesisUtterance(chunk.text);
+
+        utterance.addEventListener("boundary", (event) => {
+          if (event.name !== "word") return;
+          const word = wordAtCharIndex(chunk, event.charIndex);
+          if (word) {
+            highlightWord(activeWordRef, word.span);
           }
-          if( index + 1 < parentChildren.length){
-            parentChildren[index+1].classList.add("selected");
-          }
-        }
-    }
-});
-        utterance.rate = readingSpeed; 
+        });
+
+        utterance.rate = readingSpeed;
+        utterance.onstart = () => {
+          // Start on the sentence's FIRST word, so the boundary events that
+          // follow move the highlight forward through the sentence.
+          highlightWord(activeWordRef, chunk.words[0].span);
+        };
         utterance.onend = () => {
-          // After speaking ends, remove the spoken text from the queue
-          textQueue[0].spanElement.parentElement.classList.remove("selected");
-          textQueue[0].spanElement.classList.remove("selected");
+          clearHighlight(activeWordRef);
           setTextQueue((prevQueue) => prevQueue.slice(1));
           setIsSpeaking(false);
         };
-        utterance.onstart = () => {
-          if (textQueue[0] && textQueue[0].spanElement) {
-            textQueue[0].spanElement.parentElement.classList.add("selected");
-            textQueue[0].spanElement.classList.add("selected");
-          }
-        };
+
         setIsSpeaking(true);
         window.speechSynthesis.speak(utterance);
-        
       } else if (!isSpeaking && lastSelectedSpan && isCursorTracking) {
         const spanPresentationElements = Array.from(
           lastSelectedSpan.parentElement.parentElement.querySelectorAll('span[role="presentation"]')
@@ -182,33 +211,17 @@ export function CursorTracker({ isCursorTracking }) {
         }
 
         if (nextSpan) {
-          const parentElement = nextSpan;
-          const childElements = parentElement.children;
-          const updatedTextQueue = [];
-          let sentence = "";
+          const updatedTextQueue = buildSentenceQueue(
+            Array.from(nextSpan.children)
+          );
+          const firstWord = updatedTextQueue.length
+            ? updatedTextQueue[0].words[0].span
+            : nextSpan.children[0];
 
-          for (let i = 0; i < childElements.length; i++) {
-            const childElement = childElements[i];
-            sentence += childElement.innerText + " ";
-            if (sentence.trim().endsWith(".") || sentence.trim().endsWith("!") || sentence.trim().endsWith("?")) {
-              updatedTextQueue.push({
-                text: sentence.trim(),
-                spanElement: childElement,
-              });
-              sentence = "";
-            }
+          if (firstWord) {
+            setTextQueue(updatedTextQueue);
+            setLastSelectedSpan(firstWord);
           }
-
-          // Add any remaining text as the last chunk
-          if (sentence.trim().length > 0) {
-            updatedTextQueue.push({
-              text: sentence.trim(),
-              spanElement: parentElement.children[0], // Using first child element of parentElement
-            });
-          }
-
-          setTextQueue(updatedTextQueue);
-          setLastSelectedSpan(parentElement.children[0]);
         }
       }
     }
@@ -222,7 +235,7 @@ export function CursorTracker({ isCursorTracking }) {
         {isCursorTracking ? "yes cursor" : "not Cursor"}
       </div>
       <label>
-        Reading Speed: 
+        Reading Speed:
         <input
           type="range"
           min="0.5"
