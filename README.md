@@ -14,11 +14,15 @@ Accessibility features usually get bolted on last. Echo is what happens when the
 
 *Cursor Tracking active. The word under the cursor gets the highlight colour; the line it belongs to gets a softer tint of the same colour, so the active word stays distinguishable.*
 
+![Animation of a line of the sample document being read aloud. The highlight steps from "Every" to "page" to "of" and on through "printed text asks the reader for a small act of faith.", one word at a time, while the whole line keeps a fainter tint behind it.](docs/karaoke.gif)
+
+*Read-aloud following the voice word by word. Each step is one `boundary` event from the utterance.*
+
 ![Animation of the same highlighted word cycling through the toolbar's three highlight colours — pink, blue, then green — while the surrounding line follows in a lighter tint of each.](docs/highlight-colours.gif)
 
 *The toolbar's colour swatches applied to the active word.*
 
-<sub>Screenshots are of the app running locally against the sample PDF. This machine exposes no `speechSynthesis` voices to automated browsers, so the cursor-tracking capture supplied the utterance events an OS voice would normally emit; the highlighting itself is the app's own code.</sub>
+<sub>All captures are of the app running locally against the sample PDF. This machine exposes no `speechSynthesis` voices to automated browsers, so the cursor-tracking and read-aloud captures supplied the `boundary` events an OS voice would normally emit — one per word, with the `charIndex` and `charLength` a real engine reports. Everything that moves in them is the app's own code reacting to those events.</sub>
 
 ---
 
@@ -28,7 +32,7 @@ A PDF has no notion of a "word you can point at." pdf.js paints the page to a `<
 
 So Echo rebuilds it. After pdf.js finishes rendering the text layer, Echo walks every presentation span, splits its text on whitespace, and re-emits each word as its own `<span class="word">`. Whitespace is preserved as its own span so the visual layout stays identical to what pdf.js produced.
 
-Once every word is an element, everything else becomes cheap. Highlighting a word is a class toggle. Finding the word under the cursor is `document.elementFromPoint`. Following speech is walking `parentElement.children`. The hard problem is solved once, in one place.
+Once every word is an element, everything else becomes cheap. Highlighting a word is a class toggle. Finding the word under the cursor is `document.elementFromPoint`. Following speech is holding the ordered spans a sentence was built from and resolving each `boundary` event's `charIndex` back to one of them. The hard problem is solved once, in one place.
 
 **Where it lives:** [`src/components/PDFPage/PDFPage.js`](src/components/PDFPage/PDFPage.js) — the `memoizedTextLayer` memo inside the `PdfPage` component.
 
@@ -105,8 +109,8 @@ focus aids layered over the word spans
 
 ## Features
 
-- **Read aloud with sentence highlighting.** Sentences are queued and spoken via the Web Speech API, and the word span being read is marked with `.selected` while the line around it takes a softer tint of the same colour. Echo also listens for the utterance's `boundary` event, the intent being to advance the highlight word by word in step with the voice — that advance does not currently work; see [Known rough edges](#known-rough-edges).
-- **Cursor tracking.** Point at a word and Echo starts reading from there. It hit-tests with `document.elementFromPoint`, builds a queue of sentences from that word to the end of the run, and — when the queue drains — picks the geometrically next run (nearest on the same line, else nearest line below) and keeps going. Stop moving the cursor and speech cancels after a short grace period.
+- **Read aloud with word-level highlighting.** Sentences are queued and spoken via the Web Speech API, and the word being read is marked with `.selected` while the line around it takes a softer tint of the same colour. Each sentence is queued together with the ordered `.word` spans it was built from and the character offset of each one inside the utterance text, so the utterance's `boundary` event resolves by `charIndex` straight to the span being spoken — the highlight steps word by word in time with the voice, and a voice that skips or repeats a token cannot knock it out of sync.
+- **Cursor tracking.** Point at a word and Echo starts reading from there. It hit-tests with `document.elementFromPoint`, builds a queue of sentences from that word to the end of the run, and — when the queue drains — picks the geometrically next run (nearest on the same line, else nearest line below) and keeps going. Reading continues until the queue drains or you point somewhere else; you do not have to keep the cursor moving.
 - **Eye tracking — experimental.** See the note below.
 - **Floating toolbar.** Zoom slider, live "page N of M" derived from scroll position, highlight colour swatches, and a light/dark reading mode toggle. The toolbar fades out as you scroll into the document and returns when the cursor nears the top of the window.
 - **Reading themes and highlight colours.** Light/dark via Mantine's colour scheme; highlight colour is driven by CSS custom properties (`--highlight-color`, `--highlight-color-parent`) so the active word and its surrounding line can be tinted independently.
@@ -129,7 +133,7 @@ npm install
 npm start
 ```
 
-Open <http://localhost:3000> and drop a PDF onto the upload zone — [`docs/sample-document.pdf`](docs/sample-document.pdf) is included if you want one to hand. Then open the **Read Aloud** menu in the floating toolbar and choose **Cursor Tracking**, and move your cursor over any word to start reading from it. Keep the cursor moving: reading stops shortly after it goes still.
+Open <http://localhost:3000> and drop a PDF onto the upload zone — [`docs/sample-document.pdf`](docs/sample-document.pdf) is included if you want one to hand. Then open the **Read Aloud** menu in the floating toolbar and choose **Cursor Tracking**, and move your cursor over any word to start reading from it. Reading carries on from there until the sentence queue drains or you point at a different word.
 
 Production build:
 
@@ -158,16 +162,18 @@ React 18 · pdf.js (`pdfjs-dist`) · Web Speech API · Mantine · Framer Motion 
 
 This is a working prototype, kept honest rather than polished. The list below was checked against the app actually running, not read off the source:
 
-- **The karaoke highlight does not advance word by word.** The `boundary` handler locates the current word with `document.querySelector('.selected')` — but the tracker applies `.selected` to the active word *and* to its parent text run, and the run precedes its children in document order. So the query returns the run, and the handler walks sibling *runs* instead of sibling *words*. The highlight lands on a word and stays there for the rest of the sentence. This is the headline feature and it is the next thing to fix.
-- **The highlight starts on the wrong word.** When a sentence is queued, its `spanElement` is the element the sentence *ended* on, so the highlight appears on the last word of the sentence rather than the first.
-- **Speech cancels when the cursor stops.** Cursor tracking arms a cancel timer roughly 350ms after the last mouse movement, so reading only continues while the cursor keeps moving. Stop the cursor to keep reading and the speech stops instead.
 - **The reading-speed slider is unstyled and unplaced.** `CursorTracker` renders it as a bare `<label>` at the top-left of the document rather than inside the floating toolbar — visible in the screenshot above.
 - Zoom is applied through a `--scale-factor` CSS variable; the canvas itself is rendered at scale 1, so heavy zoom softens the page.
 - Page dimensions are shared across all pages, which assumes a uniform page size within a document.
 - Sentence splitting is punctuation-based (`.`, `!`, `?`) and will split on abbreviations.
 - `.selected-parent` in `CursorTracker.css` is never applied by any code path; the line tint is carried by the run's own `.selected` rule.
 
-Recently fixed: the active-word highlight ignored the toolbar's colour swatches because `.selected` hard-coded `background-color: black`. It now reads `--highlight-color`, with the surrounding run taking the softer `--highlight-color-parent` tint.
+Recently fixed:
+
+- **The karaoke highlight now advances word by word.** The `boundary` handler used to locate the active element with `document.querySelector('.selected')`, but `.selected` sits on the active word *and* on its parent text run, and the run precedes its own children in document order — so the query returned the run and the handler walked sibling *runs* instead of sibling *words*. Sentences now carry their ordered `.word` spans and each span's character offset in the utterance text, and the handler resolves `boundary.charIndex` to a span directly.
+- **The highlight starts on the right word.** A queued sentence used to carry the span it *ended* on, so the highlight appeared on the sentence's last word; it now carries the span it starts on.
+- **Reading no longer stops when the cursor does.** The idle-cancel timer that killed speech 350ms after the last mouse movement is gone.
+- The active-word highlight ignored the toolbar's colour swatches because `.selected` hard-coded `background-color: black`. It now reads `--highlight-color`, with the surrounding run taking the softer `--highlight-color-parent` tint.
 
 ## Credits
 
