@@ -119,7 +119,6 @@ export function CursorTracker({ isCursorTracking }) {
             parentChildren[index+1].classList.add("selected");
           }
         }
-        console.log({currentWord});
     }
 });
         utterance.rate = readingSpeed; 

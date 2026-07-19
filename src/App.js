@@ -16,11 +16,8 @@ function App() {
     var arrayBuffer;
     reader.onload = async function (event) {
       arrayBuffer = event?.target?.result;
-      console.log({ arrayBuffer });
       const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
-      console.log({ loadingTask });
       loadingTask.promise.then(function (pdf) {
-        console.log(pdf);
         setPdfData(pdf);
       });
     };
