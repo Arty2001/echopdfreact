@@ -77,7 +77,6 @@ function wordAtCharIndex(chunk, charIndex) {
 export function CursorTracker({ isCursorTracking }) {
   const { x, y } = useMouse();
   const timeoutRef = useRef(null);
-  const cancelTimeoutRef = useRef(null);
   const activeWordRef = useRef(null);
   const [textQueue, setTextQueue] = useState([]);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -89,15 +88,6 @@ export function CursorTracker({ isCursorTracking }) {
       const handleMouseMove = () => {
         clearTimeout(timeoutRef.current);
         timeoutRef.current = setTimeout(() => {
-          if (cancelTimeoutRef.current) {
-            clearTimeout(cancelTimeoutRef.current);
-          }
-          cancelTimeoutRef.current = setTimeout(() => {
-            window.speechSynthesis.cancel(); // Stop the current speech
-            setIsSpeaking(false); // Allow new text to be read
-            clearHighlight(activeWordRef);
-          }, 300); // cursor wait delay
-
           const selectedSpan = document.elementFromPoint(x, y);
           var selectedText = "";
           if (selectedSpan && selectedSpan.classList.contains("word")) {
@@ -131,6 +121,16 @@ export function CursorTracker({ isCursorTracking }) {
     return () => clearTimeout(timeoutRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [x, y, isCursorTracking]);
+
+  // Leaving cursor tracking stops the voice and takes the highlight down with it.
+  useEffect(() => {
+    if (isCursorTracking) return;
+    window.speechSynthesis.cancel();
+    clearHighlight(activeWordRef);
+    setTextQueue([]);
+    setIsSpeaking(false);
+    setLastSelectedSpan(null);
+  }, [isCursorTracking]);
 
   useEffect(() => {
     // When textQueue changes, attempt to read the next text
