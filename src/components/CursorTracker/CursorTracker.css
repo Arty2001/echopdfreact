@@ -1,6 +1,12 @@
 .selected {
-    background-color: black;
-    /* background-color: var(--highlight-color); Change the background color as desired */
+    background-color: var(--highlight-color);
+}
+
+/* The tracker applies `.selected` to the active word AND to its parent text run.
+   Matching the run more specifically gives it the softer line tint, so the active
+   word stays distinguishable inside the line it is being read from. */
+span[role="presentation"].selected {
+    background-color: var(--highlight-color-parent);
 }
 
 .selected-parent {
